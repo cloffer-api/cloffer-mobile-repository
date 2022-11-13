@@ -1,0 +1,1 @@
+class ServerInternalException implements Exception {}
