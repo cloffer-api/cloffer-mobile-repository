@@ -9,9 +9,13 @@ import 'package:cloffer_mobile/services/auth/http_auth_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  final authProvider = HttpAuthProvider();
+  const email = 'mi.morgun.ivan@mail.ru';
   test('Request test', () async {
-    final authProvider = HttpAuthProvider();
-    const email = 'mi.morgun.ivan@mail.ru';
     var sendEmailCode = await authProvider.sendEmailCode(email: email);
+  });
+  test('Send code', () async {
+    const code = '0126';
+    var sendCode = await authProvider.login(email: email, code: code);
   });
 }

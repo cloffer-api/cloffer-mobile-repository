@@ -16,41 +16,45 @@ class HttpAuthProvider implements AuthProvider {
 
   @override
   Future<String> login({required String email, required String code}) async {
-    var response = await _httpService
-        .post(route: routes.loginRoute, body: {'email': email, 'code': code});
-    var data = await jsonDecode(response.body);
+    try {
+      var response = await _httpService
+          .post(route: routes.loginRoute, body: {'email': email, 'code': code});
+      var data = await jsonDecode(response.body);
 
-    switch (response.statusCode) {
-      case HttpStatus.ok:
-        {
-          return data['token'];
-        }
-      case HttpStatus.unprocessableEntity:
-        {
-          _logger.e(data['description']);
-          throw WrongCodeAuthException();
-        }
-      case HttpStatus.notFound:
-        {
-          _logger.e(data['description']);
-          throw NoAdminWithSuchEmailFoundException();
-        }
-      case HttpStatus.internalServerError:
-        {
-          _logger.e(data['description']);
-          throw ServerInternalException();
-        }
-      default:
-        throw Exception('Unprocessed exception');
+      switch (response.statusCode) {
+        case HttpStatus.ok:
+          {
+            return data['token'];
+          }
+        case HttpStatus.unprocessableEntity:
+          {
+            _logger.e(data['description']);
+            throw WrongCodeAuthException();
+          }
+        case HttpStatus.notFound:
+          {
+            _logger.e(data['description']);
+            throw NoAdminWithSuchEmailFoundException();
+          }
+        case HttpStatus.internalServerError:
+          {
+            _logger.e(data['description']);
+            throw ServerInternalException();
+          }
+        default:
+          throw Exception('Unprocessed exception');
+      }
+    } on SocketException catch (e) {
+      _logger.e(e.message);
+      throw GenericException();
     }
   }
 
   @override
   Future<void> sendEmailCode({required String email}) async {
     try {
-      //final bodyToSend = jsonEncode({'email': email});
-      var response = await _httpService.post(
-          route: routes.sendEmailCodeRoute, body: jsonEncode({'email': email}));
+      var response = await _httpService
+          .post(route: routes.sendEmailCodeRoute, body: {'email': email});
       var data = await jsonDecode(response.body);
       var message = await data['description'];
       switch (response.statusCode) {
@@ -79,6 +83,7 @@ class HttpAuthProvider implements AuthProvider {
       }
     } on SocketException catch (e) {
       _logger.e(e.message);
+      throw GenericException();
     }
   }
 }
