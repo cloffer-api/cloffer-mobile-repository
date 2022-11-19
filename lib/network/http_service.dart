@@ -21,7 +21,9 @@ class HttpService {
 
   Future<http.Response> post(
           {String route = '',
-          Map<String, String>? headers,
-          Map<String, String>? body}) async =>
+          Map<String, String>? headers = const {
+            'Content-Type': 'application/json',
+          },
+          Object? body}) async =>
       await http.post(_getUri(route), headers: headers, body: body);
 }

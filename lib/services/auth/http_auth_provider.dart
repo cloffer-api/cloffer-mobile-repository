@@ -1,54 +1,84 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:cloffer_mobile/exceptions/auth/auth_exceptions.dart';
 import 'package:cloffer_mobile/exceptions/general_exceptions.dart';
 import 'package:cloffer_mobile/network/http_service.dart' as http;
-import 'package:cloffer_mobile/network/network_config.dart' as config;
+import 'package:cloffer_mobile/network/routes/auth/auth_routes.dart' as routes;
+import 'package:cloffer_mobile/services/logger/logger_provider.dart';
 
 import 'auth_provider.dart';
 
 class HttpAuthProvider implements AuthProvider {
-  final httpService = http.HttpService();
+  final _httpService = http.HttpService();
+  final _logger = LoggerProvider().logger;
 
   @override
-  Future<String> login({required String email, required String code}) {
-    // TODO: implement login
-    throw UnimplementedError();
+  Future<String> login({required String email, required String code}) async {
+    var response = await _httpService
+        .post(route: routes.loginRoute, body: {'email': email, 'code': code});
+    var data = await jsonDecode(response.body);
+
+    switch (response.statusCode) {
+      case HttpStatus.ok:
+        {
+          return data['token'];
+        }
+      case HttpStatus.unprocessableEntity:
+        {
+          _logger.e(data['description']);
+          throw WrongCodeAuthException();
+        }
+      case HttpStatus.notFound:
+        {
+          _logger.e(data['description']);
+          throw NoAdminWithSuchEmailFoundException();
+        }
+      case HttpStatus.internalServerError:
+        {
+          _logger.e(data['description']);
+          throw ServerInternalException();
+        }
+      default:
+        throw Exception('Unprocessed exception');
+    }
   }
 
   @override
   Future<void> sendEmailCode({required String email}) async {
     try {
-      var response = await httpService
-          .post(route: config.sendEmailCodeRoute, body: {'email': email});
-      var message = await jsonDecode(response.body);
+      //final bodyToSend = jsonEncode({'email': email});
+      var response = await _httpService.post(
+          route: routes.sendEmailCodeRoute, body: jsonEncode({'email': email}));
+      var data = await jsonDecode(response.body);
+      var message = await data['description'];
       switch (response.statusCode) {
         case HttpStatus.accepted:
           {
-            developer.log(message, name: 'auth_provider.sendEmailCode.success');
+            _logger.d(message);
           }
           break;
         case HttpStatus.notFound:
           {
-            developer.log(message,
-                name: 'auth_provider.sendEmailCode.notFound');
+            _logger.e(message);
             throw NoAdminWithSuchEmailFoundException();
           }
         case HttpStatus.unprocessableEntity:
           {
-            developer.log(message,
-                name: 'auth_provider.sendEmailCode.invalidEmail');
+            _logger.e(message);
             throw InvalidEmailException();
           }
         case HttpStatus.internalServerError:
           {
-            developer.log(message,
-                name: 'auth_provider.sendEmailCode.notFound');
+            _logger.e(message);
             throw ServerInternalException();
           }
+        default:
+          throw Exception('Unprocessed exception');
       }
-    } on SocketException catch (e) {}
+    } on SocketException catch (e) {
+      _logger.e(e.message);
+    }
   }
 }
