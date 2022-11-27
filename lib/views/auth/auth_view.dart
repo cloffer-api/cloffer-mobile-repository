@@ -2,6 +2,8 @@ import 'package:cloffer_mobile/services/auth/auth_provider.dart';
 import 'package:cloffer_mobile/services/auth/http_auth_provider.dart';
 import 'package:flutter/material.dart';
 
+typedef SendEmailFunction = Future<void> Function({required String email});
+
 class AuthView extends StatefulWidget {
   const AuthView({super.key});
 
@@ -31,9 +33,7 @@ class _AuthState extends State<AuthView> {
   @override
   Widget build(BuildContext context) => _LoginPage(
       emailController: _emailController,
-      onTap: () async {
-        _authProvider.sendEmailCode;
-      },
+      onTap: _authProvider.sendEmailCode,
       formKey: _formKey);
 }
 
@@ -45,7 +45,7 @@ class _LoginPage extends StatelessWidget {
       required this.formKey});
 
   final TextEditingController emailController;
-  final VoidCallback onTap;
+  final SendEmailFunction onTap;
   final GlobalKey<FormState> formKey;
 
   @override
@@ -131,7 +131,7 @@ class _MyCustomForm extends StatelessWidget {
       required this.formKey});
 
   final TextEditingController emailController;
-  final VoidCallback onTap;
+  final SendEmailFunction onTap;
   final GlobalKey<FormState> formKey;
 
   @override
@@ -158,7 +158,7 @@ class _MyCustomForm extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 40, 0, 40),
               child: ElevatedButton(
-                onPressed: onTap,
+                onPressed: () async => await onTap(email: emailController.text),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(340, 50),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
